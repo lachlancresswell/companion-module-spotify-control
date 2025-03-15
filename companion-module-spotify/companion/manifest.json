@@ -1,0 +1,26 @@
+{
+	"id": "spot-deck",
+	"name": "spot-deck",
+	"shortname": "SpotDeck",
+	"description": "Offline/local Spotify integration for Windows and MacOS",
+	"version": "0.0.0",
+	"license": "MIT",
+	"repository": "git+https://github.com/bitfocus/ljc-comp-1.git",
+	"bugs": "https://github.com/bitfocus/ljc-comp-1/issues",
+	"maintainers": [
+		{
+			"name": "Lachlan Cresswell",
+			"email": "dev@lachlanc.fastmail.to"
+		}
+	],
+	"runtime": {
+		"type": "node22",
+		"api": "nodejs-ipc",
+		"apiVersion": "0.0.0",
+		"entrypoint": "../dist/main.js"
+	},
+	"legacyIds": [],
+	"manufacturer": "Spotify",
+	"products": ["Spotify Desktop App Controller"],
+	"keywords": []
+}
