@@ -1,6 +1,6 @@
 {
 	"extends": "./tsconfig.build.json",
-	"include": ["src/**/*.ts"],
+	"include": ["src/**/*.ts", "../spicetify-module/src/types/spicetify.d.ts"],
 	"exclude": ["node_modules/**"],
 	"compilerOptions": {
 		// "types": ["jest", "node"]
