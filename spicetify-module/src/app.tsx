@@ -1,17 +1,31 @@
 import { io, Socket } from "socket.io-client";
 
+const COMPANION_IP = "localhost";
+const COMPANION_PORT = 9999;
+
 let interval = -1;
 
-// The async modifier allows for the user of await, which converts a promise into an object, when not using await, async is not necessary.
 async function main() {
+  function sendUpdateToCompanion(
+    socket: Socket,
+    Player: typeof Spicetify.Player
+  ) {
+    // Wait for queue to update
+    return setTimeout(() => {
+      const curPos = Player.getProgress();
+      socket.emit("spotify:update:position", curPos);
+      socket.emit("spotify:update:state", Player.data);
+    }, 300);
+  }
+
   // The following code segment waits for platform to load before running the code, this is important to avoid errors. When using things such as Player or URI, it is necessary to add those as well.
-  const { Platform } = Spicetify;
-  if (!Spicetify.CosmosAsync || !Platform.LibraryAPI || !Platform) {
+  const { Platform, Player } = Spicetify;
+  if (!Spicetify.CosmosAsync || !Platform.LibraryAPI || !Platform || !Player) {
     setTimeout(main, 500);
     return;
   }
 
-  const socket = io("http://localhost:9999", {
+  const socket = io(`http://${COMPANION_IP}:${COMPANION_PORT}`, {
     transports: ["websocket"],
   });
 
@@ -22,54 +36,26 @@ async function main() {
 
   socket.on("disconnect", () => {
     if (interval) clearInterval(interval);
-    console.info("disconnected");
-  });
-
-  socket.io.on("reconnect", (attempt) => {
-    console.info("reconnect");
   });
 
   socket.io.on("open", () => {
-    console.info("open");
-
     if (interval) clearInterval(interval);
     interval = setInterval(() => {
-      const curPos = Spicetify.Player.getProgress();
+      const curPos = Player.getProgress();
       socket.emit("spotify:update:position", curPos);
-      console.info("spotify:update:position ", curPos, interval);
-    }, 500);
-  });
-
-  socket.io.on("reconnect_attempt", (attempt) => {
-    console.info("reconnect_attempt");
-  });
-
-  socket.io.on("reconnect_error", (error) => {
-    console.error("reconnect_error");
-  });
-
-  socket.io.on("reconnect_failed", () => {
-    console.error("reconnect_failed");
-  });
-
-  socket.io.on("ping", () => {
-    console.info("ping");
+    }, 1000);
   });
 
   socket.on("spotify:delete:nextSong", () => {
-    console.info("spotify:delete:nextSong");
-    if (Spicetify.Player.data.nextItems?.length) {
-      const uri = Spicetify.Player.data.nextItems[0].uri;
+    if (Player.data.nextItems?.length) {
+      const uri = Player.data.nextItems[0].uri;
       const track: Spicetify.ContextTrack[] = [
         {
           uri,
         },
       ];
-      console.info("Clearing from queue", uri);
       Spicetify.removeFromQueue(track);
-      setTimeout(() => {
-        update(socket);
-      }, 300);
+      sendUpdateToCompanion(socket, Player);
     }
   });
 
@@ -79,11 +65,9 @@ async function main() {
         uri,
       },
     ];
-    console.info("Adding to queue ", track);
-    Spicetify.Platform.PlayerAPI.addToQueue(track);
-    setTimeout(() => {
-      update(socket);
-    }, 300);
+    Platform.PlayerAPI.addToQueue(track);
+
+    sendUpdateToCompanion(socket, Player);
   });
 
   socket.on("spotify:delete:queue", (uri?: string) => {
@@ -93,60 +77,42 @@ async function main() {
           uri,
         },
       ];
-      console.info("Clearing from queue", uri);
-      Spicetify.Platform.PlayerAPI.removeFromQueue(track);
-      setTimeout(() => {
-        update(socket);
-      }, 300);
+      Platform.PlayerAPI.removeFromQueue(track);
     } else {
-      console.info("Clearing queue");
-      Spicetify.Platform.PlayerAPI.clearQueue();
-      setTimeout(() => {
-        update(socket);
-      }, 300);
+      Platform.PlayerAPI.clearQueue();
     }
+    sendUpdateToCompanion(socket, Player);
   });
 
   socket.on("spotify:create:queue", (uri: string) => {
-    console.info("Playing", uri);
-    Spicetify.Player.playUri(uri);
-    setTimeout(() => {
-      update(socket);
-    }, 300);
+    Player.playUri(uri);
+    sendUpdateToCompanion(socket, Player);
   });
 
   socket.on("spotify:read:state", () => {
-    update(socket);
+    sendUpdateToCompanion(socket, Player);
   });
 
-  Spicetify.Player.addEventListener(
+  Player.addEventListener(
     "songchange",
     (
       event?: Event & {
         data: Spicetify.PlayerState;
       }
     ) => {
-      update(socket);
+      sendUpdateToCompanion(socket, Player);
     }
   );
-  Spicetify.Player.addEventListener(
+  Player.addEventListener(
     "onplaypause",
     (
       event?: Event & {
         data: Spicetify.PlayerState;
       }
     ) => {
-      update(socket);
+      sendUpdateToCompanion(socket, Player);
     }
   );
-
-  console.info("ready");
 }
 
 export default main;
-
-function update(socket: Socket) {
-  const curPos = Spicetify.Player.getProgress();
-  socket.emit("spotify:update:position", curPos);
-  socket.emit("spotify:update:state", Spicetify.Player.data);
-}
