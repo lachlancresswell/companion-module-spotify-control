@@ -6,6 +6,8 @@ import { UpdateActions } from './actions.js'
 import { UpdateFeedbacks } from './feedbacks.js'
 import { Server, Socket } from 'socket.io'
 
+const SPOTIFY_PORT = 9999
+
 export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	io: Server
 	socket?: Socket
@@ -13,7 +15,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 	constructor(internal: unknown) {
 		super(internal)
-		this.io = new Server(9999)
+		this.io = new Server(SPOTIFY_PORT)
 	}
 
 	async init(config: ModuleConfig): Promise<void> {
@@ -41,21 +43,26 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 			socket.on('spotify:update:state', (data: Spicetify.PlayerState) => {
 				const currentSong = data.item.name
-				const currentArtist = data.item.artists?.reduce(
-					(prev, cur, i, array) => prev + cur.name + (i < array.length - 1 ? ', ' : ''),
-					'',
-				)
+				const currentArtist =
+					data.item.artists?.reduce(
+						(prev, cur, i, array) => prev + cur.name + (i < array.length - 1 ? ', ' : ''),
+						'',
+					) || ''
 				const currentUri = data.item.uri
 				const currentTrackDuration = data.item.duration.milliseconds / 1000
-				const nextArtist = data.nextItems?.length
-					? data.nextItems[0].artists?.reduce(
-							(prev, cur, i, array) => prev + cur.name + (i < array.length - 1 ? ', ' : ''),
-							'',
-						)
-					: ''
-				const nextTrackDuration = (data.nextItems?.length && data.nextItems[0].duration.milliseconds / 1000) || 0
+
+				const nextTrack = data.nextItems?.length ? data.nextItems[0] : undefined
+
+				const nextSong = nextTrack?.name || ''
+				const nextArtist =
+					nextTrack?.artists?.reduce(
+						(prev, cur, i, array) => prev + cur.name + (i < array.length - 1 ? ', ' : ''),
+						'',
+					) || ''
+				const nextUri = nextTrack?.uri || ''
+				const nextTrackDuration = (nextTrack?.duration.milliseconds || 0) / 1000
 				const nextTrackDurationFormatted =
-					(data.nextItems?.length &&
+					(nextTrackDuration &&
 						`${Math.floor(nextTrackDuration / 60)
 							.toString()
 							.padStart(2, '0')}:${(nextTrackDuration % 60).toString().padStart(2, '0')}`) ||
@@ -66,7 +73,9 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 					currentArtist,
 					currentUri,
 					currentTrackDuration,
+					nextSong,
 					nextArtist,
+					nextUri,
 					nextTrackDuration,
 					nextTrackDurationFormatted,
 				})
@@ -96,11 +105,11 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		this.socket?.emit('spotify:update:queue', uri)
 	}
 
-	removeFromQueue(uri: string): void {
+	removeURIFromQueue(uri: string): void {
 		this.socket?.emit('spotify:delete:queue', uri)
 	}
 
-	removeNextFromQueue(): void {
+	removeNextTrackFromQueue(): void {
 		this.socket?.emit('spotify:delete:nextSong')
 	}
 

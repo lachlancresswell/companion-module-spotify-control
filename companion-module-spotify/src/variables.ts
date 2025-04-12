@@ -10,6 +10,8 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 		{ variableId: 'currentTimeRemaining', name: 'Current Track Time Remaining' },
 		{ variableId: 'currentTimeRemainingFormatted', name: 'Current Track Time Remaining Formatted' },
 		{ variableId: 'nextArtist', name: 'Next Artist' },
+		{ variableId: 'nextSong', name: 'Next Song' },
+		{ variableId: 'nextUri', name: 'Next URI' },
 		{ variableId: 'nextTrackDuration', name: 'Next Track Duration' },
 		{ variableId: 'nextTrackDurationFormatted', name: 'Next Track Duration Formatted' },
 	])

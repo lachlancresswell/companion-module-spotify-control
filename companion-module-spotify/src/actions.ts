@@ -2,26 +2,14 @@ import { ModuleInstance } from './main.js'
 
 export function UpdateActions(self: ModuleInstance): void {
 	self.setActionDefinitions({
-		sample_action: {
-			name: 'Queue Song',
-			options: [
-				{
-					id: 'uri',
-					type: 'textinput',
-					label: 'Spotify URI',
-					default: '',
-				},
-			],
-			callback: async (event) => self.queueSong(event.options.uri as string),
-		},
 		clearQueue: {
 			name: 'Clear Queue',
 			options: [],
 			callback: async () => self.clearQueue(),
 		},
 
-		removeFromQueue: {
-			name: 'Remove from queue',
+		removeURIFromQueue: {
+			name: 'Remove URI from queue',
 			options: [
 				{
 					id: 'uri',
@@ -30,13 +18,15 @@ export function UpdateActions(self: ModuleInstance): void {
 					default: '',
 				},
 			],
-			callback: async (event) => self.removeFromQueue(event.options.uri as string),
+			callback: async (event) => {
+				if (event.options.uri && typeof event.options.uri === 'string') self.removeURIFromQueue(event.options.uri)
+			},
 		},
 
-		removeNextFromQueue: {
-			name: 'Remove next from queue',
+		removeNextTrackFromQueue: {
+			name: 'Remove next track from queue',
 			options: [],
-			callback: async () => self.removeNextFromQueue(),
+			callback: async () => self.removeNextTrackFromQueue(),
 		},
 
 		playURI: {
@@ -49,7 +39,9 @@ export function UpdateActions(self: ModuleInstance): void {
 					default: '',
 				},
 			],
-			callback: async (event) => self.playURI(event.options.uri as string),
+			callback: async (event) => {
+				if (event.options.uri && typeof event.options.uri === 'string') self.playURI(event.options.uri)
+			},
 		},
 	})
 }
