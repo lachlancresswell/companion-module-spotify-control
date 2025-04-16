@@ -18,14 +18,19 @@ async function main() {
     }, 300);
   }
 
+  console.info("Starting.");
+
   // The following code segment waits for platform to load before running the code, this is important to avoid errors. When using things such as Player or URI, it is necessary to add those as well.
   const { Platform, Player } = Spicetify;
   if (!Spicetify.CosmosAsync || !Platform.LibraryAPI || !Platform || !Player) {
+    console.info("Restarting");
     setTimeout(main, 500);
     return;
   }
 
-  const socket = io(`http://${COMPANION_IP}:${COMPANION_PORT}`, {
+  const url = `http://${COMPANION_IP}:${COMPANION_PORT}`;
+  console.info(`Connecting to ${url}`);
+  const socket = io(url, {
     transports: ["websocket"],
   });
 
@@ -34,11 +39,30 @@ async function main() {
 
   if (interval) clearInterval(interval);
 
+  socket.on("connect", () => {
+    console.info("Connected.");
+  });
+
+  socket.on("connect_error", (e: Error) => {
+    console.info("Connection error.");
+    console.error(e);
+  });
+
   socket.on("disconnect", () => {
     if (interval) clearInterval(interval);
+    console.info("Disconnected.");
+  });
+
+  socket.io.on("reconnect", (attempt) => {
+    console.info("Reconnected.");
+  });
+
+  socket.io.on("reconnect_attempt", () => {
+    console.info("Reconnection attempt.");
   });
 
   socket.io.on("open", () => {
+    console.info("Socket open.");
     if (interval) clearInterval(interval);
     interval = setInterval(() => {
       const curPos = Player.getProgress();
