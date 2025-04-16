@@ -9,20 +9,24 @@ import { Server, Socket } from 'socket.io'
 const SPOTIFY_PORT = 9999
 
 export class ModuleInstance extends InstanceBase<ModuleConfig> {
-	io: Server
+	io!: Server
 	socket?: Socket
 	config!: ModuleConfig // Setup in init()
 
 	constructor(internal: unknown) {
 		super(internal)
-		this.io = new Server(SPOTIFY_PORT)
 	}
 
 	async init(config: ModuleConfig): Promise<void> {
+		console.info('Initialising.')
+		this.updateStatus(InstanceStatus.Connecting)
+		this.io = new Server(SPOTIFY_PORT)
+		console.info(`Listening on port ${SPOTIFY_PORT}`)
 		this.config = config
 
 		this.io.on('disconnect', (reason, details) => {
 			console.info('disconnected', reason, details)
+			this.updateStatus(InstanceStatus.Disconnected)
 		})
 
 		this.io.on('disconnecting', () => {
@@ -31,9 +35,14 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 		this.io.on('connect_error', () => {
 			console.error('connect_error')
+			this.updateStatus(InstanceStatus.ConnectionFailure)
 		})
 
 		this.io.on('connection', (socket) => {
+			socket.on('disconnect', (reason) => {
+				console.error('Disconnected.', reason)
+				this.updateStatus(InstanceStatus.Disconnected)
+			})
 			console.info('connected')
 			this.updateStatus(InstanceStatus.Ok)
 
@@ -41,17 +50,17 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 			socket.emit('spotify:read:state')
 
-			socket.on('spotify:update:state', (data: Spicetify.PlayerState) => {
-				const currentSong = data.item.name
+			socket.on('spotify:update:state', (data: Spicetify.PlayerState | null) => {
+				const currentSong = data?.item?.name || ''
 				const currentArtist =
-					data.item.artists?.reduce(
+					data?.item.artists?.reduce(
 						(prev, cur, i, array) => prev + cur.name + (i < array.length - 1 ? ', ' : ''),
 						'',
 					) || ''
-				const currentUri = data.item.uri
-				const currentTrackDuration = data.item.duration.milliseconds / 1000
+				const currentUri = data?.item.uri
+				const currentTrackDuration = (data?.item.duration.milliseconds || 0) / 1000
 
-				const nextTrack = data.nextItems?.length ? data.nextItems[0] : undefined
+				const nextTrack = data?.nextItems?.length ? data.nextItems[0] : undefined
 
 				const nextSong = nextTrack?.name || ''
 				const nextArtist =
