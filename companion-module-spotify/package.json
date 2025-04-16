@@ -16,7 +16,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/bitfocus/ljc-comp-1.git"
+		"url": "git+https://github.com/lachlancresswell/companion-module-spotify-control"
 	},
 	"dependencies": {
 		"@companion-module/base": "~1.11.2",

@@ -1,7 +1,7 @@
 {
 	"id": "spot-deck",
 	"name": "spot-deck",
-	"shortname": "SpotDeck",
+	"shortname": "Spotify Local",
 	"description": "Offline/local Spotify integration for Windows and MacOS",
 	"version": "0.0.0",
 	"license": "MIT",
@@ -21,6 +21,6 @@
 	},
 	"legacyIds": [],
 	"manufacturer": "Spotify",
-	"products": ["Spotify Desktop App Controller"],
+	"products": ["Spotify Offline/Local Control"],
 	"keywords": []
 }
